@@ -27,16 +27,23 @@ A full-stack house customer management application built with React, tRPC, and S
 
 ### 2. Deploy Steps
 
-1. **Click to Deploy**:
-   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/P2scalWang/house-customer-management)
+1. **Fork/Clone Repository** (if you want to make changes):
+   ```bash
+   git clone https://github.com/P2scalWang/house-customer-management.git
+   ```
 
-2. **Set Environment Variables** in Vercel:
+2. **Import to Vercel**:
+   - Go to [vercel.com/new](https://vercel.com/new)
+   - Select "Import Git Repository"
+   - Choose your GitHub repository
+
+3. **Set Environment Variables** in Vercel:
    ```
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-3. **Deploy** - Vercel will automatically build and deploy your app!
+4. **Deploy** - Vercel will automatically build and deploy your app!
 
 ### 3. Supabase Setup
 
@@ -120,6 +127,25 @@ This project is optimized for Vercel deployment with:
 - ✅ Serverless functions for API
 - ✅ Static site generation for frontend
 - ✅ Environment variable management
+
+## Troubleshooting
+
+### Common Deployment Issues
+
+1. **PNPM Lockfile Issues**:
+   ```
+   ERR_PNPM_LOCKFILE_CONFIG_MISMATCH
+   ```
+   - This project has been optimized to avoid lockfile conflicts
+   - If you encounter this, the dependencies are configured to work without patches
+
+2. **Build Errors**:
+   - Ensure you have the correct Node.js version (18+)
+   - Check that all environment variables are set correctly
+
+3. **Supabase Connection Issues**:
+   - Verify your `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+   - Check Supabase project status
 
 ## Support
 
