@@ -8,16 +8,34 @@ const supabaseUrl = ENV.supabaseUrl;
 const supabaseKey = ENV.supabaseServiceKey || ENV.supabaseAnonKey;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error("SUPABASE_URL or SUPABASE_ANON_KEY is not set in environment variables.");
-  console.error("Please set the following environment variables:");
-  console.error("- SUPABASE_URL=your_supabase_project_url");
-  console.error("- SUPABASE_ANON_KEY=your_supabase_anon_key");
-  throw new Error("Missing Supabase configuration. Please check your environment variables.");
+  const errorMsg = `
+Missing Supabase configuration. Please set the following environment variables:
+- SUPABASE_URL=your_supabase_project_url
+- SUPABASE_ANON_KEY=your_supabase_anon_key
+
+Current values:
+- SUPABASE_URL: ${supabaseUrl || 'NOT SET'}
+- SUPABASE_ANON_KEY: ${supabaseKey ? 'SET' : 'NOT SET'}
+`;
+  console.error(errorMsg);
+  // Don't throw error immediately - let the routes handle it gracefully
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Create client even with dummy values to prevent import errors
+export const supabase = createClient(
+  supabaseUrl || "https://dummy.supabase.co", 
+  supabaseKey || "dummy-key"
+);
+
+// Helper function to check if Supabase is properly configured
+export function isSupabaseConfigured(): boolean {
+  return !!(ENV.supabaseUrl && (ENV.supabaseServiceKey || ENV.supabaseAnonKey));
+}
 
 // Helper function to get the Supabase client (if needed elsewhere)
 export function getSupabase() {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Missing Supabase configuration. Please check your environment variables.");
+  }
   return supabase;
 }

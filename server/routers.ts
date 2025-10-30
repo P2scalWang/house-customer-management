@@ -15,64 +15,55 @@ export const appRouter = router({
         password: z.string().min(3),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { supabase } = await import("./supabase");
-
-        // 1) Try normal Supabase Auth sign-in first
-        let authedUserId: string | null = null;
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: input.email,
-            password: input.password,
-          });
-          if (!error && data?.user) {
-            authedUserId = data.user.id;
+          const { supabase, isSupabaseConfigured } = await import("./supabase");
+          
+          // Check if Supabase is properly configured
+          if (!isSupabaseConfigured()) {
+            throw new Error("ระบบยังไม่ได้ตั้งค่า Supabase Environment Variables กรุณาติดต่อผู้ดูแลระบบ");
           }
-        } catch {
-          // ignore, will fallback below
-        }
 
-        // 2) Resolve user record from our public.users table
-        let userRow: any | null = null;
-        if (authedUserId) {
-          const { data: userData } = await supabase
-            .from("users")
-            .select("*")
-            .eq("openId", authedUserId)
-            .maybeSingle();
-          userRow = userData ?? null;
-        }
-
-        // 3) Fallback: if Supabase Auth sign-in didn't work, validate against public.users directly
-        if (!userRow) {
-          const { data: userByEmail } = await supabase
+          // Simple login: check if user exists in users table with matching email and password
+          const { data: userRow, error } = await supabase
             .from("users")
             .select("*")
             .eq("email", input.email)
             .eq("password", input.password)
             .maybeSingle();
-          userRow = userByEmail ?? null;
+
+          if (error) {
+            console.error("Supabase query error:", error);
+            throw new Error("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล");
+          }
+
+          if (!userRow) {
+            throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+          }
+
+          // Update lastSignedIn
+          await supabase
+            .from("users")
+            .update({ lastSignedIn: new Date().toISOString() })
+            .eq("id", userRow.id);
+
+          // Create simple session - use user id as openId if openId is null
+          const openId = userRow.openId || `user_${userRow.id}`;
+          
+          // Issue JWT session
+          const { sdk } = await import("./_core/sdk");
+          const sessionToken = await sdk.createSessionToken(openId, {
+            name: userRow.name ?? userRow.email ?? "",
+            expiresInMs: ONE_YEAR_MS,
+          });
+          
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
+
+          return { success: true, user: userRow };
+        } catch (error: any) {
+          console.error("Login error:", error);
+          throw new Error(error.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
         }
-
-        if (!userRow) {
-          throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-        }
-
-        // Update lastSignedIn
-        await supabase
-          .from("users")
-          .update({ lastSignedIn: new Date().toISOString() })
-          .eq("id", userRow.id);
-
-        // Issue JWT session compatible with existing auth middleware
-        const { sdk } = await import("./_core/sdk");
-        const sessionToken = await sdk.createSessionToken(userRow.openId, {
-          name: userRow.name ?? userRow.email ?? "",
-          expiresInMs: ONE_YEAR_MS,
-        });
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, cookieOptions);
-
-        return { success: true, user: userRow };
       }),
     logout: publicProcedure.mutation(async ({ ctx }) => {
       const { supabase } = await import("./supabase");
