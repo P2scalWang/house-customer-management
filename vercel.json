@@ -7,35 +7,14 @@
       "config": {
         "distDir": "client/dist"
       }
-    },
-    {
-      "src": "server/_core/vercel.ts",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/health",
-      "dest": "server/_core/vercel.ts"
-    },
-    {
-      "src": "/api/trpc/(.*)",
-      "dest": "server/_core/vercel.ts"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "server/_core/vercel.ts"
-    },
-    {
       "src": "/(.*)",
-      "dest": "client/dist/index.html"
+      "dest": "/index.html"
     }
   ],
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm run build",
-  "functions": {
-    "server/_core/vercel.ts": {
-      "maxDuration": 30
-    }
-  }
+  "buildCommand": "vite build"
 }
