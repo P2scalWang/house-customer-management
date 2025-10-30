@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -9,28 +10,22 @@ import HousesPage from "./pages/HousesPage";
 import MembersPage from "./pages/MembersPage";
 import ActiveMembersPage from "./pages/ActiveMembersPage";
 import ExpiredMembersPage from "./pages/ExpiredMembersPage";
-import { useEffect } from "react";
+import Login from "./pages/Login";
 
 function Router() {
-  // Auto-redirect to dashboard for any unrecognized routes
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path === '/login' || path === '/welcome') {
-      // Redirect login/welcome to dashboard
-      window.history.replaceState({}, '', '/');
-    }
-  }, []);
-
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      <Route path={"/login"} component={Login} />
       <Route path={"/"} component={Dashboard} />
       <Route path={"/infolog"} component={InfoLogPage} />
       <Route path={"/houses"} component={HousesPage} />
       <Route path={"/members"} component={MembersPage} />
       <Route path={"/active-members"} component={ActiveMembersPage} />
       <Route path={"/expired-members"} component={ExpiredMembersPage} />
-      {/* All other routes go to dashboard */}
-      <Route component={Dashboard} />
+      <Route path={"/404"} component={NotFound} />
+      {/* Final fallback route */}
+      <Route component={NotFound} />
     </Switch>
   );
 }

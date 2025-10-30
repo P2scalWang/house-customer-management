@@ -8,34 +8,14 @@ const supabaseUrl = ENV.supabaseUrl;
 const supabaseKey = ENV.supabaseServiceKey || ENV.supabaseAnonKey;
 
 if (!supabaseUrl || !supabaseKey) {
-  const errorMsg = `
-Missing Supabase configuration. Please set the following environment variables:
-- SUPABASE_URL=your_supabase_project_url
-- SUPABASE_ANON_KEY=your_supabase_anon_key
-
-Current values:
-- SUPABASE_URL: ${supabaseUrl || 'NOT SET'}
-- SUPABASE_ANON_KEY: ${supabaseKey ? 'SET' : 'NOT SET'}
-`;
-  console.error(errorMsg);
-  // Don't throw error immediately - let the routes handle it gracefully
+  console.error("SUPABASE_URL or SUPABASE_ANON_KEY is not set in environment variables.");
+  // In a real application, you might throw an error or handle this more gracefully.
+  // For deployment preparation, we'll assume the user will set them in Vercel.
 }
 
-// Create client even with dummy values to prevent import errors
-export const supabase = createClient(
-  supabaseUrl || "https://dummy.supabase.co", 
-  supabaseKey || "dummy-key"
-);
-
-// Helper function to check if Supabase is properly configured
-export function isSupabaseConfigured(): boolean {
-  return !!(ENV.supabaseUrl && (ENV.supabaseServiceKey || ENV.supabaseAnonKey));
-}
+export const supabase = createClient(supabaseUrl || "dummy_url", supabaseKey || "dummy_key");
 
 // Helper function to get the Supabase client (if needed elsewhere)
 export function getSupabase() {
-  if (!isSupabaseConfigured()) {
-    throw new Error("Missing Supabase configuration. Please check your environment variables.");
-  }
   return supabase;
 }

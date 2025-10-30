@@ -1,289 +1,200 @@
+import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Building2, UserCircle, AlertCircle, FileText, UserCheck, UserX } from "lucide-react";
+import { Users, Building2, UserCircle, AlertCircle } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useMemo } from "react";
 
 export default function Dashboard() {
-  // Mock data for demo purposes
-  const mockStats = {
-    totalInfoLogs: 150,
-    totalHouses: 45,
-    totalMembers: 180,
-    activeMembers: 165,
-    expiredMembers: 15,
-    houseCounts: {
-      "0 ที่": 5,
-      "1 ที่": 8,
-      "2 ที่": 12,
-      "3 ที่": 10,
-      "4 ที่": 7,
-      "5 ที่": 3,
-    },
-    packageCounts: {
-      "แพคเกจพรีเมียม": 45,
-      "แพคเกจมาตรฐาน": 32,
-      "แพคเกจพื้นฐาน": 28,
-      "แพคเกจทดลอง": 18,
-      "ไม่ระบุ": 27,
-    }
-  };
+  const { data: allInfoLogs, isLoading: loadingInfoLogs } = trpc.infoLog.list.useQuery();
+  const { data: houses, isLoading: loadingHouses } = trpc.house.list.useQuery();
+  const { data: members, isLoading: loadingMembers } = trpc.member.list.useQuery();
 
-  const statsCards = [
+  // นับจำนวนกลุ่มบ้านตามจำนวนสมาชิก (ดึงจาก house_list และนับจาก house_members)
+  const houseCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      "0 ที่": 0,
+      "1 ที่": 0,
+      "2 ที่": 0,
+      "3 ที่": 0,
+      "4 ที่": 0,
+      "5 ที่": 0,
+    };
+    
+    if (houses && members) {
+      // วนลูปทุกบ้านใน house_list
+      houses.forEach((house) => {
+        // นับสมาชิกในบ้านนี้จาก house_members โดยเทียบ house_id
+        const memberCount = members.filter((m: any) => m.houseId === house.id).length;
+        const key = `${memberCount} ที่`;
+        if (counts[key] !== undefined) {
+          counts[key]++;
+        }
+      });
+    }
+    
+    return counts;
+  }, [houses, members]);
+
+  // นับจำนวนลูกค้าตามแพคเกจ
+  const packageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    if (allInfoLogs) {
+      allInfoLogs.forEach((log) => {
+        const pkg = log.package || "ไม่ระบุ";
+        counts[pkg] = (counts[pkg] || 0) + 1;
+      });
+    }
+    
+    return counts;
+  }, [allInfoLogs]);
+
+  const stats = [
     {
-      title: "InfoLog ทั้งหมด",
-      value: mockStats.totalInfoLogs,
-      icon: FileText,
-      description: "รายการข้อมูลลูกค้าทั้งหมด",
+      title: "ข้อมูล InfoLog",
+      value: allInfoLogs?.length || 0,
+      icon: UserCircle,
       color: "text-blue-600",
-      bgColor: "bg-blue-100",
+      bgColor: "bg-blue-50",
     },
     {
-      title: "กลุ่มบ้าน",
-      value: mockStats.totalHouses,
+      title: "จำนวนบ้าน",
+      value: houses?.length || 0,
       icon: Building2,
-      description: "จำนวนกลุ่มบ้านที่ลงทะเบียน",
       color: "text-green-600",
-      bgColor: "bg-green-100",
+      bgColor: "bg-green-50",
     },
     {
       title: "สมาชิกทั้งหมด",
-      value: mockStats.totalMembers,
+      value: members?.length || 0,
       icon: Users,
-      description: "จำนวนสมาชิกในระบบ",
       color: "text-purple-600",
-      bgColor: "bg-purple-100",
+      bgColor: "bg-purple-50",
     },
     {
-      title: "สมาชิกใช้งานอยู่",
-      value: mockStats.activeMembers,
-      icon: UserCheck,
-      description: "สมาชิกที่ยังไม่หมดอายุ",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100",
-    },
-    {
-      title: "สมาชิกหมดอายุ",
-      value: mockStats.expiredMembers,
-      icon: UserX,
-      description: "สมาชิกที่หมดอายุแล้ว",
+      title: "บ้านหมดอายุ",
+      value: houses?.filter((h) => h.status === "expired").length || 0,
+      icon: AlertCircle,
       color: "text-red-600",
-      bgColor: "bg-red-100",
+      bgColor: "bg-red-50",
     },
   ];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            ภาพรวมข้อมูลระบบจัดการบ้านและสมาชิก
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 transition-colors">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 transition-colors">ภาพรวมระบบจัดการลูกค้าและกลุ่มบ้าน</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {statsCards.map((stat) => (
-            <Card key={stat.title} className="transition-shadow hover:shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat) => (
+            <Card key={stat.title} className="transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2 transition-colors">
+                      {loadingInfoLogs || loadingHouses || loadingMembers ? "..." : stat.value}
+                    </p>
+                  </div>
+                  <div className={`${stat.bgColor} dark:bg-opacity-20 p-3 rounded-lg transition-colors`}>
+                    <stat.icon className={`w-6 h-6 ${stat.color} dark:opacity-90`} />
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stat.description}
-                </p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* House Distribution */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+        {/* กลุ่มบ้านที่ว่าง */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="transition-colors">
             <CardHeader>
-              <CardTitle className="text-lg">การกระจายตัวของบ้าน</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                จำนวนบ้านจัดกลุ่มตามจำนวนสมาชิก
-              </p>
+              <CardTitle>กลุ่มบ้านที่ว่าง</CardTitle>
+              <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">จำนวนกลุ่มแยกตามที่ว่าง</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {Object.entries(mockStats.houseCounts).map(([range, count]) => {
-                  let badgeBg = "";
-                  let badgeText = "";
+              {loadingHouses || loadingMembers ? (
+                <p className="text-gray-500 dark:text-gray-400">กำลังโหลด...</p>
+              ) : (
+                <div>
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between py-3 px-2 border-b-2 border-gray-200 dark:border-gray-700 transition-colors">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors">จำนวนที่ว่าง</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors">จำนวนบ้าน</span>
+                  </div>
                   
-                  if (range === "0 ที่") {
-                    badgeBg = "bg-red-100 dark:bg-red-900/50";
-                    badgeText = "text-red-600 dark:text-red-300";
-                  } else if (range === "1 ที่" || range === "2 ที่") {
-                    badgeBg = "bg-yellow-100 dark:bg-yellow-900/50";
-                    badgeText = "text-yellow-700 dark:text-yellow-300";
-                  } else if (range === "3 ที่") {
-                    badgeBg = "bg-emerald-200 dark:bg-emerald-900/50";
-                    badgeText = "text-emerald-700 dark:text-emerald-300";
-                  } else {
-                    badgeBg = "bg-emerald-300 dark:bg-emerald-800/50";
-                    badgeText = "text-emerald-800 dark:text-emerald-200";
-                  }
-
-                  return (
-                    <div key={range} className="flex items-center justify-between">
-                      <span className={`inline-block px-3 py-1 rounded-md text-sm font-medium ${badgeBg} ${badgeText}`}>
-                        {range}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 bg-muted rounded-full w-20 overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                            style={{ 
-                              width: `${(count / Math.max(...Object.values(mockStats.houseCounts))) * 100}%` 
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-8 text-right">
-                          {count}
+                  {/* Data Rows */}
+                  <div className="divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
+                  {Object.entries(houseCounts).map(([key, count]) => {
+                    const slot = key;
+                    let badgeBg = "";
+                    let badgeText = "";
+                    
+                    if (slot === "0 ที่") {
+                      badgeBg = "bg-red-100 dark:bg-red-900/50";
+                      badgeText = "text-red-600 dark:text-red-300";
+                    } else if (slot === "1 ที่" || slot === "2 ที่") {
+                      badgeBg = "bg-yellow-100 dark:bg-yellow-900/50";
+                      badgeText = "text-yellow-700 dark:text-yellow-300";
+                    } else if (slot === "3 ที่") {
+                      badgeBg = "bg-emerald-200 dark:bg-emerald-900/50";
+                      badgeText = "text-emerald-700 dark:text-emerald-300";
+                    } else {
+                      badgeBg = "bg-emerald-300 dark:bg-emerald-800/50";
+                      badgeText = "text-emerald-800 dark:text-emerald-200";
+                    }
+                    
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between py-4 px-2"
+                      >
+                        <span className={`inline-block px-3 py-1 rounded-md text-sm font-medium ${badgeBg} ${badgeText} transition-colors`}>
+                          {key}
                         </span>
+                        <span className="text-xl font-semibold text-gray-900 dark:text-gray-100 transition-colors">{count}</span>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-colors">
             <CardHeader>
-              <CardTitle className="text-lg">ลูกค้าแยกตามแพคเกจ</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                จำนวนลูกค้าแยกตามแพคเกจที่ใช้งาน
-              </p>
+              <CardTitle>ลูกค้าแยกตามแพคเกจ</CardTitle>
+              <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">จำนวนลูกค้าแยกตามแพคเกจ</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {Object.entries(mockStats.packageCounts)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([pkg, count]) => (
-                    <div
-                      key={pkg}
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span className="font-medium">{pkg}</span>
+              {loadingInfoLogs ? (
+                <p className="text-gray-500 dark:text-gray-400">กำลังโหลด...</p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(packageCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([pkg, count]) => (
+                      <div
+                        key={pkg}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
+                          <p className="font-medium text-gray-900 dark:text-gray-100 transition-colors">{pkg}</p>
+                        </div>
+                        <p className="text-xl font-bold text-gray-900 dark:text-gray-100 transition-colors">{count}</p>
                       </div>
-                      <span className="text-xl font-bold">{count}</span>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Member Status Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">สถานะสมาชิก</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              อัตราส่วนสมาชิกใช้งานอยู่และหมดอายุ
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                    <span className="text-sm">สมาชิกใช้งานอยู่</span>
-                  </div>
-                  <span className="text-sm font-medium">{mockStats.activeMembers}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-sm">สมาชิกหมดอายุ</span>
-                  </div>
-                  <span className="text-sm font-medium">{mockStats.expiredMembers}</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${(mockStats.activeMembers / mockStats.totalMembers) * 100}%` 
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  {((mockStats.activeMembers / mockStats.totalMembers) * 100).toFixed(1)}% สมาชิกยังใช้งานอยู่
-                </p>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-emerald-600 mb-2">
-                    {((mockStats.activeMembers / mockStats.totalMembers) * 100).toFixed(0)}%
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    อัตราการใช้งานระบบ
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">การดำเนินการด่วน</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                <FileText className="h-6 w-6 text-blue-600 mb-2" />
-                <h3 className="font-medium mb-1">จัดการ InfoLog</h3>
-                <p className="text-xs text-muted-foreground">เพิ่ม แก้ไข ข้อมูลลูกค้า</p>
-              </div>
-              <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                <Building2 className="h-6 w-6 text-green-600 mb-2" />
-                <h3 className="font-medium mb-1">จัดการบ้าน</h3>
-                <p className="text-xs text-muted-foreground">เพิ่ม แก้ไข กลุ่มบ้าน</p>
-              </div>
-              <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                <Users className="h-6 w-6 text-purple-600 mb-2" />
-                <h3 className="font-medium mb-1">จัดการสมาชิก</h3>
-                <p className="text-xs text-muted-foreground">เพิ่ม แก้ไข สมาชิก</p>
-              </div>
-              <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                <AlertCircle className="h-6 w-6 text-amber-600 mb-2" />
-                <h3 className="font-medium mb-1">ตรวจสอบสมาชิกหมดอายุ</h3>
-                <p className="text-xs text-muted-foreground">ดูรายการหมดอายุ</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Demo Notice */}
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-amber-800 dark:text-amber-200">
-                  โหมดสาธิต (Demo Mode)
-                </h3>
-                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  ข้อมูลที่แสดงเป็นข้อมูลจำลองเพื่อการสาธิต ในการใช้งานจริงจะแสดงข้อมูลจากฐานข้อมูล
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

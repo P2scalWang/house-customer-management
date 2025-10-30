@@ -5,16 +5,24 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "client/dist"
       }
+    },
+    {
+      "src": "server/_core/index.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "server/_core/index.ts"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "client/dist/index.html"
     }
   ],
   "installCommand": "pnpm install",
-  "buildCommand": "vite build"
+  "buildCommand": "pnpm run build"
 }

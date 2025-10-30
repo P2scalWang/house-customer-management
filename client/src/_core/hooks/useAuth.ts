@@ -1,4 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
+import { TRPCClientError } from "@trpc/client";
+import { useCallback, useEffect, useMemo } from "react";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -6,37 +8,81 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
-  // Always bypass authentication - no server calls needed
-  const mockUser = {
-    id: 1,
-    name: "Demo User",
-    email: "demo@example.com",
-    openId: "demo-user-001"
-  };
+  const { redirectOnUnauthenticated = false, redirectPath = "/login" } =
+    options ?? {};
+  const bypassAuth = import.meta.env.VITE_DISABLE_AUTH === 'true';
+  const utils = trpc.useUtils();
+
+  const meQuery = trpc.auth.me.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      utils.auth.me.setData(undefined, null);
+    },
+  });
 
   const logout = useCallback(async () => {
-    // Simple logout - just redirect to dashboard (acts like refresh)
-    window.location.href = "/";
-  }, []);
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (error: unknown) {
+      if (
+        error instanceof TRPCClientError &&
+        error.data?.code === "UNAUTHORIZED"
+      ) {
+        return;
+      }
+      throw error;
+    } finally {
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+    }
+  }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    // Always authenticated with mock user
+    // Use actual user data from the server, even when bypassing strict auth checks
+    const user = meQuery.data;
     localStorage.setItem(
       "manus-runtime-user-info",
-      JSON.stringify(mockUser)
+      JSON.stringify(user ?? null)
     );
     return {
-      user: mockUser,
-      loading: false,
-      error: null,
-      isAuthenticated: true,
+      user: user ?? null,
+      loading: meQuery.isLoading || logoutMutation.isPending,
+      error: meQuery.error ?? logoutMutation.error ?? null,
+      isAuthenticated: Boolean(user) || bypassAuth,
     };
-  }, []);
+  }, [
+    meQuery.data,
+    meQuery.error,
+    meQuery.isLoading,
+    logoutMutation.error,
+    logoutMutation.isPending,
+    bypassAuth,
+  ]);
 
-  // Never redirect since always authenticated
+  useEffect(() => {
+  if (bypassAuth) return; // never redirect in bypass mode
+  if (!redirectOnUnauthenticated) return;
+    if (meQuery.isLoading || logoutMutation.isPending) return;
+    if (state.user) return;
+    if (typeof window === "undefined") return;
+    if (window.location.pathname === redirectPath) return;
+
+    window.location.href = redirectPath
+  }, [
+    redirectOnUnauthenticated,
+    redirectPath,
+    logoutMutation.isPending,
+    meQuery.isLoading,
+    state.user,
+  ]);
+
   return {
     ...state,
-    refresh: () => Promise.resolve(),
+    refresh: () => meQuery.refetch(),
     logout,
   };
 }
