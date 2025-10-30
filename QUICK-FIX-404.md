@@ -8,53 +8,78 @@ Code: NOT_FOUND
 ID: sin1::xxxxx-xxxxxxxxxx-xxxxxxxxxxxx
 ```
 
+## Root Cause
+The issue is that **Environment Variables are not set in Vercel**, causing the tRPC API to fail.
+
 ## Solution
 
 ### Step 1: Set Environment Variables in Vercel
 
-1. Go to your Vercel project dashboard
-2. Click on **Settings** tab
+1. Go to your **Vercel project dashboard**
+2. Click on **Settings** tab  
 3. Click on **Environment Variables** in the sidebar
-4. Add these two variables:
+4. Add these **EXACT** variables:
 
 ```
-SUPABASE_URL = your_supabase_project_url
-SUPABASE_ANON_KEY = your_supabase_anon_key
+Name: SUPABASE_URL
+Value: [your_supabase_project_url]
+
+Name: SUPABASE_ANON_KEY  
+Value: [your_supabase_anon_key]
 ```
 
 ### Step 2: Get Your Supabase Credentials
 
 1. Go to [supabase.com](https://supabase.com)
-2. Open your project
+2. Open your project (p2scalworkhost@gmail.com's Org)
 3. Go to **Settings** > **API**
-4. Copy the values:
+4. Copy these values:
    - **Project URL** → use as `SUPABASE_URL`
    - **anon public** key → use as `SUPABASE_ANON_KEY`
 
-### Step 3: Redeploy
+**Example:**
+```
+SUPABASE_URL = https://abcdefghijklmnop.supabase.co
+SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
-1. After adding environment variables in Vercel
-2. Go to **Deployments** tab
-3. Click **Redeploy** on the latest deployment
-4. Or push any small change to trigger new deployment
+### Step 3: Redeploy in Vercel
 
-### Step 4: Test Login
+⚠️ **IMPORTANT:** Environment variables only take effect after redeployment
 
-Use these credentials to test:
-- **Email**: admin@example.com
-- **Password**: admin123
+1. After adding environment variables
+2. Go to **Deployments** tab in Vercel
+3. Click **"..."** menu on latest deployment
+4. Click **"Redeploy"**
+5. Wait for deployment to complete
 
-## Verification
+### Step 4: Test the Fix
 
-After fixing, you should see:
-- ✅ Login page loads
-- ✅ No 404 error when clicking "Sign In"
-- ✅ Either successful login or proper error message
+**Test URLs** (replace with your domain):
+1. `https://your-app.vercel.app/api/health` - Should show "OK"
+2. `https://your-app.vercel.app/api/debug` - Shows environment status
+3. Login page with: admin@example.com / admin123
+
+## Verification Checklist
+
+✅ Environment variables added in Vercel  
+✅ Project redeployed after adding variables  
+✅ `/api/health` returns "OK"  
+✅ Login page loads without 404  
+✅ Can attempt login (success/failure both OK, no 404)  
 
 ## Still Having Issues?
 
-Check the Vercel function logs:
-1. Go to Vercel Dashboard
-2. Click on your project
-3. Go to **Functions** tab
-4. Check the logs for error details
+### Debug Steps:
+1. Check `/api/debug` endpoint for environment status
+2. Check Vercel function logs:
+   - Go to Vercel Dashboard → **Functions** tab
+   - Look for error messages
+3. Verify Supabase credentials are correct
+4. Make sure you redeployed after adding variables
+
+### Common Mistakes:
+- ❌ Forgot to redeploy after adding environment variables
+- ❌ Wrong Supabase URL (missing https://)
+- ❌ Wrong anon key (copied service role key instead)
+- ❌ Typo in variable names (SUPABASE_URL vs SUPABASE_URI)

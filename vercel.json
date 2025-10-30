@@ -9,14 +9,22 @@
       }
     },
     {
-      "src": "server/_core/index.ts",
+      "src": "server/_core/vercel.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/api/health",
+      "dest": "server/_core/vercel.ts"
+    },
+    {
+      "src": "/api/trpc/(.*)",
+      "dest": "server/_core/vercel.ts"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "server/_core/index.ts"
+      "dest": "server/_core/vercel.ts"
     },
     {
       "src": "/(.*)",
@@ -24,5 +32,10 @@
     }
   ],
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm run build"
+  "buildCommand": "pnpm run build",
+  "functions": {
+    "server/_core/vercel.ts": {
+      "maxDuration": 30
+    }
+  }
 }
