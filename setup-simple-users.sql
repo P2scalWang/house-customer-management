@@ -28,16 +28,36 @@ CREATE INDEX idx_users_email ON users(email);
 -- Enable Row Level Security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
--- Create policy
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Allow all access to users table" ON users;
 DROP POLICY IF EXISTS "Service role can do everything on users" ON users;
+DROP POLICY IF EXISTS "Allow public access to users for login" ON users;
+
+-- Create policy for service role (full access)
 CREATE POLICY "Service role can do everything on users" ON users
-    FOR ALL USING (true);
+    FOR ALL 
+    TO service_role
+    USING (true)
+    WITH CHECK (true);
+
+-- Create policy for authenticated users (can read their own data)
+CREATE POLICY "Users can view their own data" ON users
+    FOR SELECT 
+    TO authenticated
+    USING (true);
+
+-- Create policy for anon users (for login endpoint)
+CREATE POLICY "Allow anon access for login" ON users
+    FOR SELECT 
+    TO anon
+    USING (true);
 
 -- Grant permissions
-GRANT ALL ON users TO authenticated;
-GRANT ALL ON users TO anon;
+GRANT ALL ON users TO service_role;
+GRANT SELECT ON users TO authenticated;
+GRANT SELECT ON users TO anon;
+GRANT USAGE, SELECT ON SEQUENCE users_id_seq TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE users_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE users_id_seq TO anon;
 
 -- ============================================
 -- ขั้นตอนที่ 2: เพิ่ม Users
@@ -84,3 +104,24 @@ ORDER BY id;
 -- User: user@house.com / user123  
 -- Manager: manager@house.com / manager123
 -- Demo: demo@house.com / demo123
+
+-- ============================================
+-- Supabase Setup Instructions
+-- ============================================
+
+/*
+1. ไปที่ Supabase Dashboard
+2. เลือก Project ของคุณ
+3. ไปที่ SQL Editor
+4. Copy & Paste SQL ข้างบนทั้งหมด
+5. กด Run
+
+6. ตรวจสอบ Environment Variables ใน Vercel:
+   - SUPABASE_URL=https://your-project-id.supabase.co
+   - SUPABASE_ANON_KEY=eyJhbGc... (หรือใช้ SUPABASE_SERVICE_ROLE_KEY)
+
+7. ถ้าใช้ ANON_KEY ให้แน่ใจว่า RLS policies อนุญาตให้ anon อ่านข้อมูล users ได้
+   ถ้าใช้ SERVICE_ROLE_KEY จะไม่ติด RLS (แนะนำสำหรับ development)
+
+8. ทดสอบ login ที่ /login
+*/
