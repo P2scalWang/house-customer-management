@@ -1,3 +1,4 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,20 +19,22 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { APP_LOGO, APP_TITLE } from "@/const";
+import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Building2, UserCheck, UserX } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { Button } from "./ui/button";
 import { DarkModeToggle } from "./DarkModeToggle";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: FileText, label: "InfoLog", path: "/", disabled: true },
-  { icon: Building2, label: "รายชื่อรวม", path: "/", disabled: true },
-  { icon: Users, label: "สมาชิกบ้าน", path: "/", disabled: true },
-  { icon: UserCheck, label: "สมาชิกที่ใช้งานอยู่", path: "/", disabled: true },
-  { icon: UserX, label: "สมาชิกที่หมดอายุ", path: "/", disabled: true },
+  { icon: FileText, label: "InfoLog", path: "/infolog" },
+  { icon: Building2, label: "รายชื่อรวม", path: "/houses" },
+  { icon: Users, label: "สมาชิกบ้าน", path: "/members" },
+  { icon: UserCheck, label: "สมาชิกที่ใช้งานอยู่", path: "/active-members" },
+  { icon: UserX, label: "สมาชิกที่หมดอายุ", path: "/expired-members" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -45,25 +48,53 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-      return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
-    }
-    return DEFAULT_WIDTH;
+    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-
-  // Mock user for demo
-  const mockUser = {
-    id: 1,
-    name: "Demo User",
-    email: "demo@house.com"
-  };
+  const { loading, user } = useAuth();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
-    }
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
+
+  if (loading) {
+    return <DashboardLayoutSkeleton />
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative group">
+              <div className="relative">
+                <img
+                  src={APP_LOGO}
+                  alt={APP_TITLE}
+                  className="h-20 w-20 rounded-xl object-cover shadow"
+                />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-bold tracking-tight">{APP_TITLE}</h1>
+              <p className="text-sm text-muted-foreground">
+                Please sign in to continue
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => {
+              window.location.href = getLoginUrl();
+            }}
+            size="lg"
+            className="w-full shadow-lg hover:shadow-xl transition-all"
+          >
+            Sign in
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider
@@ -73,7 +104,7 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth} user={mockUser}>
+      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -83,14 +114,13 @@ export default function DashboardLayout({
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
-  user: any;
 };
 
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
-  user,
 }: DashboardLayoutContentProps) {
+  const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -134,11 +164,6 @@ function DashboardLayoutContent({
       document.body.style.userSelect = "";
     };
   }, [isResizing, setSidebarWidth]);
-
-  const handleLogout = () => {
-    // Simple demo logout - just refresh page
-    window.location.reload();
-  };
 
   return (
     <>
@@ -190,20 +215,19 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
-                const isActive = location === item.path && !item.disabled;
+                const isActive = location === item.path;
                 return (
-                  <SidebarMenuItem key={item.path + item.label}>
+                  <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => !item.disabled && setLocation(item.path)}
-                      tooltip={item.disabled ? "ไม่พร้อมใช้งานในโหมดสาธิต" : item.label}
-                      className={`h-10 transition-all font-normal ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      disabled={item.disabled}
+                      onClick={() => setLocation(item.path)}
+                      tooltip={item.label}
+                      className={`h-10 transition-all font-normal`}
                     >
                       <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""} ${item.disabled ? "text-muted-foreground" : ""}`}
+                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
                       />
-                      <span className={item.disabled ? "text-muted-foreground" : ""}>{item.label}</span>
+                      <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -220,26 +244,29 @@ function DashboardLayoutContent({
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase() || "D"}
+                      {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "Demo User"}
+                      {user?.name || "-"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "demo@house.com"}
+                      {user?.email || "-"}
                     </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
-                  onClick={handleLogout}
+                  onClick={async () => {
+                    await logout();
+                    window.location.href = "/login";
+                  }}
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Refresh Page</span>
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

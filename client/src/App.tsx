@@ -5,27 +5,24 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Dashboard from "./pages/Dashboard";
-import InfoLogPage from "./pages/InfoLogPage";
-import HousesPage from "./pages/HousesPage";
-import MembersPage from "./pages/MembersPage";
-import ActiveMembersPage from "./pages/ActiveMembersPage";
-import ExpiredMembersPage from "./pages/ExpiredMembersPage";
-import Login from "./pages/Login";
+import { useEffect } from "react";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
+  // Auto-redirect login to dashboard for demo
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/login') {
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
   return (
     <Switch>
-      <Route path={"/login"} component={Login} />
       <Route path={"/"} component={Dashboard} />
-      <Route path={"/infolog"} component={InfoLogPage} />
-      <Route path={"/houses"} component={HousesPage} />
-      <Route path={"/members"} component={MembersPage} />
-      <Route path={"/active-members"} component={ActiveMembersPage} />
-      <Route path={"/expired-members"} component={ExpiredMembersPage} />
+      <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
+      {/* All other routes go to dashboard for demo */}
+      <Route component={Dashboard} />
     </Switch>
   );
 }
