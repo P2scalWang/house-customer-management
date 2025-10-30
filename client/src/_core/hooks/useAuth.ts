@@ -15,8 +15,8 @@ export function useAuth(options?: UseAuthOptions) {
   };
 
   const logout = useCallback(async () => {
-    // Simple logout - just redirect to login
-    window.location.href = "/login";
+    // Simple logout - just redirect to dashboard (acts like refresh)
+    window.location.href = "/";
   }, []);
 
   const state = useMemo(() => {

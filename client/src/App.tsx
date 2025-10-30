@@ -10,13 +10,14 @@ import HousesPage from "./pages/HousesPage";
 import MembersPage from "./pages/MembersPage";
 import ActiveMembersPage from "./pages/ActiveMembersPage";
 import ExpiredMembersPage from "./pages/ExpiredMembersPage";
-import Login from "./pages/Login";
+import Welcome from "./pages/Welcome";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
+  // Show welcome page for /login, then auto-redirect to dashboard
   return (
     <Switch>
-      <Route path={"/login"} component={Login} />
+      <Route path={"/login"} component={Welcome} />
+      <Route path={"/welcome"} component={Welcome} />
       <Route path={"/"} component={Dashboard} />
       <Route path={"/infolog"} component={InfoLogPage} />
       <Route path={"/houses"} component={HousesPage} />
@@ -24,8 +25,8 @@ function Router() {
       <Route path={"/active-members"} component={ActiveMembersPage} />
       <Route path={"/expired-members"} component={ExpiredMembersPage} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
+      {/* Final fallback route - go to dashboard */}
+      <Route component={Dashboard} />
     </Switch>
   );
 }
