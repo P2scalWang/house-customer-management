@@ -9,7 +9,7 @@ A full-stack house customer management application built with React, tRPC, and S
 - 📊 Dashboard with analytics
 - 🌓 Dark/Light mode support
 - 📱 Responsive design
-- 🔐 Authentication with Supabase
+- � **Simple access - no login required!**
 
 ## Tech Stack
 
@@ -21,14 +21,22 @@ A full-stack house customer management application built with React, tRPC, and S
 
 ## Quick Deploy to Vercel
 
+### 🚀 **No Setup Required!**
+
+Deploy and use immediately - no environment variables or database setup needed!
+
 ### 1. Prerequisites
-- A [Supabase](https://supabase.com) project
 - A [Vercel](https://vercel.com) account
 
 ### 2. Deploy Steps
 
 1. **Click to Deploy**:
    [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/P2scalWang/house-customer-management)
+
+2. **That's it!** Your app is ready to use:
+   - Visit your deployed URL
+   - Click "เข้าสู่ระบบ" (Sign In)
+   - Access the dashboard immediately
 
 2. **Set Environment Variables** in Vercel:
    ```
