@@ -27,23 +27,16 @@ A full-stack house customer management application built with React, tRPC, and S
 
 ### 2. Deploy Steps
 
-1. **Fork/Clone Repository** (if you want to make changes):
-   ```bash
-   git clone https://github.com/P2scalWang/house-customer-management.git
-   ```
+1. **Click to Deploy**:
+   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/P2scalWang/house-customer-management)
 
-2. **Import to Vercel**:
-   - Go to [vercel.com/new](https://vercel.com/new)
-   - Select "Import Git Repository"
-   - Choose your GitHub repository
-
-3. **Set Environment Variables** in Vercel:
+2. **Set Environment Variables** in Vercel:
    ```
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-4. **Deploy** - Vercel will automatically build and deploy your app!
+3. **Deploy** - Vercel will automatically build and deploy your app!
 
 ### 3. Supabase Setup
 
@@ -51,7 +44,10 @@ A full-stack house customer management application built with React, tRPC, and S
 2. Go to **Settings > API** to get your credentials:
    - `Project URL` → use as `SUPABASE_URL`
    - `anon public` key → use as `SUPABASE_ANON_KEY`
-3. Run the SQL scripts in your Supabase SQL editor (optional, for sample data)
+3. **Important**: Make sure these environment variables are set in Vercel
+4. Run the SQL scripts in your Supabase SQL editor (optional, for sample data):
+   - `setup-complete-database.sql` - Creates tables and sample data
+   - `setup-login-users.sql` - Creates test user (admin@example.com / admin123)
 
 ## Local Development
 
@@ -132,20 +128,40 @@ This project is optimized for Vercel deployment with:
 
 ### Common Deployment Issues
 
-1. **PNPM Lockfile Issues**:
+1. **404 NOT_FOUND Error when signing in**:
    ```
-   ERR_PNPM_LOCKFILE_CONFIG_MISMATCH
+   404: NOT_FOUND
+   Code: NOT_FOUND
    ```
+   **Solution**: This means Supabase environment variables are not set properly
+   - Go to your Vercel project settings
+   - Add Environment Variables:
+     ```
+     SUPABASE_URL=your_supabase_project_url
+     SUPABASE_ANON_KEY=your_supabase_anon_key
+     ```
+   - Redeploy your project
+
+2. **"Missing Supabase configuration" Error**:
+   - Check that your environment variables are correct
+   - Verify your Supabase project is active
+   - Make sure you're using the correct Project URL and anon key
+
+3. **Login fails with "อีเมลหรือรหัสผ่านไม่ถูกต้อง"**:
+   - Run the SQL script `setup-login-users.sql` in your Supabase SQL editor
+   - Or create a user manually in your Supabase `users` table
+   - Test credentials: admin@example.com / admin123
+
+4. **PNPM Lockfile Issues** (resolved):
    - This project has been optimized to avoid lockfile conflicts
-   - If you encounter this, the dependencies are configured to work without patches
 
-2. **Build Errors**:
-   - Ensure you have the correct Node.js version (18+)
-   - Check that all environment variables are set correctly
+### Quick Test
 
-3. **Supabase Connection Issues**:
-   - Verify your `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-   - Check Supabase project status
+After deployment, you should be able to:
+1. Visit your Vercel URL
+2. See the login page
+3. Login with: admin@example.com / admin123
+4. Access the dashboard
 
 ## Support
 

@@ -16,7 +16,16 @@ export default function Login() {
       window.location.href = "/";
     },
     onError: (error) => {
-      setError(error.message);
+      console.error("Login error:", error);
+      
+      // Handle specific error cases
+      if (error.message?.includes("Missing Supabase configuration")) {
+        setError("ระบบยังไม่ได้ตั้งค่า Supabase กรุณาติดต่อผู้ดูแลระบบ");
+      } else if (error.message?.includes("NOT_FOUND") || error.message?.includes("404")) {
+        setError("ไม่พบ API endpoint กรุณาตรวจสอบการตั้งค่าเซิร์ฟเวอร์");
+      } else {
+        setError(error.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      }
     },
   });
 
@@ -52,7 +61,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -72,6 +81,12 @@ export default function Login() {
                 required
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p>สำหรับทดสอบ:</p>
+              <p>Email: admin@example.com</p>
+              <p>Password: admin123</p>
             </div>
           </CardContent>
           <CardFooter>
