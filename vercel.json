@@ -2,25 +2,25 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.html",
+      "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist/client"
+        "distDir": "client/dist"
       }
     },
     {
-      "src": "server/index.ts",
+      "src": "server/_core/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/index.ts"
+      "dest": "server/_core/index.ts"
     },
     {
       "src": "/(.*)",
-      "dest": "index.html"
+      "dest": "client/dist/index.html"
     }
   ],
   "installCommand": "pnpm install",

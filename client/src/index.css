@@ -174,7 +174,7 @@
   }
   
   .dark-bg-row {
-    @apply dark:bg-gray-800 dark:hover:bg-gray-750;
+    @apply dark:bg-gray-800 dark:hover:bg-gray-700;
   }
 
   @media (min-width: 640px) {
