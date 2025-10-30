@@ -22,7 +22,5 @@
       "src": "/(.*)",
       "dest": "client/dist/index.html"
     }
-  ],
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm run build"
+  ]
 }

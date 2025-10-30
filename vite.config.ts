@@ -24,6 +24,20 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "client/dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-avatar', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+          trpc: ['@trpc/client', '@trpc/react-query', '@tanstack/react-query'],
+          icons: ['lucide-react'],
+          router: ['wouter'],
+          form: ['react-hook-form'],
+          utils: ['clsx', 'tailwind-merge', 'class-variance-authority']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 600
   },
   server: {
     host: true,
